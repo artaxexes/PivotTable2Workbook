@@ -13,6 +13,13 @@ Call wbkFromPivotTable(srcWkbFilepath, resultFolder)
 
 Private Sub wbkFromPivotTable(xlSrcWkbFilepath, resultFolder)
 
+	Dim thisYear
+	Dim thisMonth
+
+	thisYear = CStr(Year(Now()))
+	thisMonth = Month(Now())
+	MsgBox thisYear & ", " & thisMonth
+
 End Sub
 
 Private Sub ShowErr
