@@ -15,14 +15,14 @@ Set objFile = objShell.BrowseForFolder(0, "Select the MS Excel file with target 
 Set objFolder = objShell.BrowseForFolder(0, "Please select the folder to save result file:", 1, "")
 
 If Not (objFile Is Nothing or objFolder Is Nothing) Then
-    Call pivotTable2Workbook(objFile.Self.path, objFolder.Self.path)
+    Call PivotTable2Workbook(objFile.Self.path, objFolder.Self.path)
 Else
     MsgBox "Attention you must have, my young padawan"
 End If
 
 
 
-Private Sub pivotTable2Workbook(xlsPath, folderPath)
+Private Sub PivotTable2Workbook(xlsPath, folderPath)
 
     MsgBox "xls path: " & xlsPath
     MsgBox "Folder to save: " & folderPath
@@ -39,5 +39,6 @@ End Sub
 
 
 Private Sub ShowErr
-
+    MsgBox "Error: " & Err.Number & vbCrLf & "Error (Hex): " & Hex(Err.Number) & vbCrLf & "Source: " & Err.Source & vbCrLf & "Description: " & Err.Description
+    Err.Clear
 End Sub
