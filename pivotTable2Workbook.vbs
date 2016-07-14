@@ -47,3 +47,12 @@ Private Function CheckFileExists(ByVal filespec)
     Set fso = CreateObject("Scripting.FileSystemObject")
     CheckFileExists = fso.FileExists(filespec)
 End Function
+
+
+
+' Receives a file path for delete the file
+Private Function DeleteAFile(ByVal filespec)
+    Dim fso
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    fso.DeleteFile(filespec)
+End Function
