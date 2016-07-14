@@ -23,22 +23,27 @@ End If
 
 
 Private Sub PivotTable2Workbook(xlsPath, folderPath)
-
-    MsgBox "xls path: " & xlsPath
-    MsgBox "Folder to save: " & folderPath
     
 	Dim thisYear
 	Dim thisMonth
     
 	thisYear = CStr(Year(Now()))
 	thisMonth = Month(Now())
-	MsgBox thisYear & ", " & thisMonth
 
 End Sub
 
 
-
+' Show error details
 Private Sub ShowErr
     MsgBox "Error: " & Err.Number & vbCrLf & "Error (Hex): " & Hex(Err.Number) & vbCrLf & "Source: " & Err.Source & vbCrLf & "Description: " & Err.Description
     Err.Clear
 End Sub
+
+
+
+' Receives a file path for check if exists and returns a boolean
+Private Function CheckFileExists(ByVal filespec)
+    Dim fso
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    CheckFileExists = fso.FileExists(filespec)
+End Function
