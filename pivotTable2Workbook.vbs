@@ -8,21 +8,23 @@ Option Explicit
 
 
 
-Dim objShell, objFile, objFolder
+Dim objShell, objFile, objFolder, wsName, pgFld
 
 Set objShell = CreateObject("Shell.Application")
 Set objFile = objShell.BrowseForFolder(0, "Select the MS Excel file with target pivot tables:", &H4000, "")
 Set objFolder = objShell.BrowseForFolder(0, "Please select the folder to save result file:", 1, "")
+wsName = InputBox("Worksheet name:", "PivotTable2Workbook")
+pgFld = InputBox("Page field name:", "PivotTable2Workbook")
 
-If Not (objFile Is Nothing OR objFolder Is Nothing) Then
-    Call PivotTable2Workbook(objFile.Self.path, objFolder.Self.path & "\")
+If Not (objFile Is Nothing OR objFolder Is Nothing OR (VarType(wsName) = vbString AND wsName = "") OR (VarType(pgFld) = vbString AND pgFld = "")) Then
+    Call PivotTable2Workbook(objFile.Self.path, objFolder.Self.path & "\", wsName, pgFld)
 Else
     MsgBox "Attention you must have, my young padawan"
 End If
 
 
 
-Private Sub PivotTable2Workbook(xlsPath, folderPath)
+Private Sub PivotTable2Workbook(xlsPath, folderPath, wsName, pgFldName)
     
     Dim xlsWbkNew
     Dim xlsWstNew
@@ -48,10 +50,10 @@ Private Sub PivotTable2Workbook(xlsPath, folderPath)
     If Err.Number <> 0 Then ShowErr
 
     ' For each pivot table: check and filter by pattern, set visible for current year, create a workbook with filtered data
-    For Each PvtTbl In xlsWbk.Worksheets("Plan1").PivotTables
+        For Each PvtTbl In xlsWbk.Worksheets(wsName).PivotTables
         ' Check for pattern in Page Item
         For Each PgFld In PvtTbl.PageFields
-            If PgFld.Name = "PRODUTO" Then
+                If PgFld.Name = pgFldName Then
                 ' Create result workbook and select first worksheet
                 Set xlsWbkNew = xlsApp.Workbooks.Add
                 Set xlsWstNew = xlsWbkNew.Worksheets(1)
