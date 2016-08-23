@@ -8,114 +8,138 @@ Option Explicit
 
 
 
-Dim objShell, objFile, objFolder, wsName, pgFld
+Const resultFolder = ""
+Const sourceFolder = "C:\Users\anddrei.ferreira\Documents\jobs\07_anp\"
 
-Set objShell = CreateObject("Shell.Application")
-Set objFile = objShell.BrowseForFolder(0, "Select the MS Excel file with target pivot tables:", &H4000, "")
-Set objFolder = objShell.BrowseForFolder(0, "Please select the folder to save result file:", 1, "")
-wsName = InputBox("Worksheet name:", "PivotTable2Workbook")
-pgFld = InputBox("Page field name:", "PivotTable2Workbook")
+Dim xlsFiles: xlsFiles = FilesInFolder(sourceFolder)
 
-If Not (objFile Is Nothing OR objFolder Is Nothing OR (VarType(wsName) = vbString AND wsName = "") OR (VarType(pgFld) = vbString AND pgFld = "")) Then
-	Dim index
-	index = InStrRev(objFile.Title, ".")
-    Call PivotTable2Workbook(Mid(objFile.Title, 1, index - 1), objFile.Self.path, objFolder.Self.path & "\", wsName, pgFld)
+If UBound(xlsFiles) > 0 Then
+	PivotTable2Workbook sourceFolder, resultFolder, xlsFiles
 Else
-    MsgBox "Attention you must have, my young padawan"
+	MsgBox "This folder does not exist or there is no xls/xlsx file in this folder!"
 End If
 
 
 
-Private Sub PivotTable2Workbook(xlsName, xlsPath, folderPath, wsName, pgFldName)
+Private Sub PivotTable2Workbook(sourceFolder, resultFolder, theFiles)
+
+    MsgBox Join(theFiles, vbCrLf)
     
-    Dim xlsWbkNew
-    Dim xlsWstNew
-    Dim xlsFilename
-    Dim PvtTbl
-    Dim PgFld
-    Dim PvtItm
-    Dim PgPvtItm
-    Dim i
-    Dim j
+'    Dim file
     
-    Dim thisYear : thisYear = CStr(Year(Now()))
-    Dim thisMonth : thisMonth = Month(Now())
+'    For Each file In files
+    	
+'    	MsgBox file
+    
+'    	Dim xlsWbkNew
+'    	Dim xlsWstNew
+'    	Dim xlsFilename
+'    	Dim PvtTbl
+'    	Dim PgFld
+'    	Dim PvtItm
+'    	Dim PgPvtItm
+'    	Dim i
+'    	Dim j
+    
+'    	Dim thisYear : thisYear = CStr(Year(Now()))
+'    	Dim thisMonth : thisMonth = Month(Now())
 
-    Dim foundYear : foundYear = False
-    Dim targetYear : targetYear = thisYear
+'    	Dim foundYear : foundYear = False
+'    	Dim targetYear : targetYear = thisYear
 
-    Dim xlsApp : Set xlsApp = CreateObject("Excel.Application")
-    xlsApp.DisplayAlerts = False
+'    	Dim xlsApp : Set xlsApp = CreateObject("Excel.Application")
+'    	xlsApp.DisplayAlerts = False
 
-    On Error Resume Next
-    Dim xlsWbk : Set xlsWbk = xlsApp.Workbooks.Open(xlsPath, 0, True) 'xlSrcWbk
-    If Err.Number <> 0 Then ShowErr
+'    	On Error Resume Next
+'    	Dim xlsWbk : Set xlsWbk = xlsApp.Workbooks.Open(sourceFolder & file, 0, True) 'xlSrcWbk
+'    	If Err.Number <> 0 Then ShowErr
 
-    ' For each pivot table: check and filter by pattern, set visible for current year, create a workbook with filtered data
-        For Each PvtTbl In xlsWbk.Worksheets(wsName).PivotTables
+    	' For each pivot table: check and filter by pattern, set visible for current year, create a workbook with filtered data
+'        For Each PvtTbl In xlsWbk.Worksheets(wsName).PivotTables
         ' Check for pattern in Page Item
-        For Each PgFld In PvtTbl.PageFields
-                If PgFld.Name = pgFldName Then
+'        For Each PgFld In PvtTbl.PageFields
+'                If PgFld.Name = pgFldName Then
                 ' Create result workbook and select first worksheet
-                Set xlsWbkNew = xlsApp.Workbooks.Add
-                Set xlsWstNew = xlsWbkNew.Worksheets(1)
-                xlsApp.Sheets(1).Select
+'                Set xlsWbkNew = xlsApp.Workbooks.Add
+'                Set xlsWstNew = xlsWbkNew.Worksheets(1)
+'                xlsApp.Sheets(1).Select
                 ' Head of current worksheet
-                xlsWstNew.Cells(1, 1).Value = "Mes"
-                xlsWstNew.Cells(1, 2).Value = pgFldName
-                xlsWstNew.Cells(1, 3).Value = "Valor"
-                xlsWstNew.Range("A1:C1").Font.Bold = True
+'                xlsWstNew.Cells(1, 1).Value = "Mes"
+'                xlsWstNew.Cells(1, 2).Value = pgFldName
+'                xlsWstNew.Cells(1, 3).Value = "Valor"
+'                xlsWstNew.Range("A1:C1").Font.Bold = True
                 ' Set visible data from current year or past year
-                While foundYear = False
-                    For Each PvtItm In PvtTbl.PivotFields("ANO").PivotItems
-                        If PvtItm.Name = targetYear Then
-                            PvtItm.Visible = True
-                            foundYear = True
-                        Else
-                            PvtItm.Visible = False
-                        End If
-                    Next
-                    If foundYear = False Then targetYear = thisYear - 1
-                WEnd
+'                While foundYear = False
+'                    For Each PvtItm In PvtTbl.PivotFields("ANO").PivotItems
+'                        If PvtItm.Name = targetYear Then
+'                            PvtItm.Visible = True
+'                            foundYear = True
+'                        Else
+'                            PvtItm.Visible = False
+'                        End If
+'                    Next
+'                    If foundYear = False Then targetYear = thisYear - 1
+'                WEnd
                 ' For every month
-                i = 2
-                For j = 1 To thisMonth
+'                i = 2
+'                For j = 1 To thisMonth
                     ' Filter by pattern in Pivot Item
-                    For Each PgPvtItm In PgFld.PivotItems
-                        PgFld.ClearAllFilters
-                        PgFld.CurrentPage = PgPvtItm.Name
+'                    For Each PgPvtItm In PgFld.PivotItems
+'                        PgFld.ClearAllFilters
+'                        PgFld.CurrentPage = PgPvtItm.Name
                         ' Get pivot data from first month until current month for current year
                         'strMonth = MonthName(j)
                         'strMonthProp = UCase(Left(strMonth, 1)) & LCase(Right(strMonth, Len(strMonth) - 1))
-                        xlsWstNew.Cells(i, 1).Value = CheckMonth(j)
-                        xlsWstNew.Cells(i, 2).Value = PgPvtItm.Name
-                        xlsWstNew.Cells(i, 3).Value = PvtTbl.GetPivotData(CheckMonth(j), "Ano", targetYear).Value
-                        i = i + 1
-                    Next
-                Next
+'                        xlsWstNew.Cells(i, 1).Value = CheckMonth(j)
+'                        xlsWstNew.Cells(i, 2).Value = PgPvtItm.Name
+'                        xlsWstNew.Cells(i, 3).Value = PvtTbl.GetPivotData(CheckMonth(j), "Ano", targetYear).Value
+'                        i = i + 1
+'                    Next
+'                Next
                 ' Default name for result workbook, e.g., 2016_ASFALTO.xlsx
-                xlsFilename = xlsName & "_" & PvtTbl.Name & "_" & targetYear & ".xlsx"
+'                xlsFilename = xlsName & "_" & PvtTbl.Name & "_" & targetYear & ".xlsx"
                 ' Delete previous result workbook if exists
-                If FileExists(folderPath & xlsFilename) Then
-                    FileDelete(folderPath & xlsFilename)
-                End If
-            End If
-        Next
+'                If FileExists(folderPath & xlsFilename) Then
+'                    FileDelete(folderPath & xlsFilename)
+'                End If
+'            End If
+'        Next
         ' Save the result workbook
-        xlsWbkNew.SaveAs(folderPath & xlsFilename)
-        xlsWbkNew.Close
-        Set xlsWbkNew = Nothing
-        Set xlsWstNew = Nothing
-    Next
+'        xlsWbkNew.SaveAs(folderPath & xlsFilename)
+'        xlsWbkNew.Close
+'        Set xlsWbkNew = Nothing
+'        Set xlsWstNew = Nothing
+'    Next
 
     ' Finish the job
-    xlsWbk.Saved = True
-    xlsWbk.Close
-    xlsApp.Quit
-    Set xlsWbk = Nothing
-    Set xlsApp = Nothing
+'    xlsWbk.Saved = True
+'    xlsWbk.Close
+'    xlsApp.Quit
+'    Set xlsWbk = Nothing
+'    Set xlsApp = Nothing
 
 End Sub
+
+
+
+' Return xls/xlsx files in existing folder
+Private Function FilesInFolder(path)
+	Dim arrFiles : arrFiles = Array()
+	If FolderExists(path) Then
+		Dim objFSO, objFolder, objFiles, objFile
+		Set objFSO = CreateObject("Scripting.FileSystemObject")
+		Set objFolder = objFSO.GetFolder(path)
+		Set objFiles = objFolder.Files
+		For Each objFile In objFiles
+			If objFSO.GetExtensionName(objFile) = "xls" Or objFSO.GetExtensionName(objFile) = "xlsx" Then
+				Dim index : index = UBound(arrFiles)
+				ReDim Preserve arrFiles(index + 1)
+				arrFiles(index + 1) = objFile.Name
+			End If
+		Next
+	End If
+	FilesInFolder = arrFiles
+End Function
 
 
 
@@ -145,10 +169,21 @@ End Function
 
 
 ' Receives a file path for check if exists and returns a boolean
-Private Function FileExists(ByVal filespec)
+Private Function FileExists(ByVal filePath)
 
    Dim fso : Set fso = CreateObject("Scripting.FileSystemObject")
-   FileExists = fso.FileExists(filespec)
+   FileExists = fso.FileExists(filePath)
+   Set fso = Nothing
+
+End Function
+
+
+
+' Receives a file path for check if exists and returns a boolean
+Private Function FolderExists(ByVal folderPath)
+
+   Dim fso : Set fso = CreateObject("Scripting.FileSystemObject")
+   FolderExists = fso.FolderExists(folderPath)
    Set fso = Nothing
 
 End Function
@@ -156,10 +191,10 @@ End Function
 
 
 ' Receives a file path for delete the file
-Private Function FileDelete(ByVal filespec)
+Private Sub FileDelete(filePath)
 
     Dim fso : Set fso = CreateObject("Scripting.FileSystemObject")
-    fso.DeleteFile(filespec)
+    fso.DeleteFile(filePath)
     Set fso = Nothing
 
-End Function
+End Sub
