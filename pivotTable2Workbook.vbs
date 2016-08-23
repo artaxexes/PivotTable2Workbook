@@ -17,14 +17,16 @@ wsName = InputBox("Worksheet name:", "PivotTable2Workbook")
 pgFld = InputBox("Page field name:", "PivotTable2Workbook")
 
 If Not (objFile Is Nothing OR objFolder Is Nothing OR (VarType(wsName) = vbString AND wsName = "") OR (VarType(pgFld) = vbString AND pgFld = "")) Then
-    Call PivotTable2Workbook(objFile.Self.path, objFolder.Self.path & "\", wsName, pgFld)
+	Dim index
+	index = InStrRev(objFile.Title, ".")
+    Call PivotTable2Workbook(Mid(objFile.Title, 1, index - 1), objFile.Self.path, objFolder.Self.path & "\", wsName, pgFld)
 Else
     MsgBox "Attention you must have, my young padawan"
 End If
 
 
 
-Private Sub PivotTable2Workbook(xlsPath, folderPath, wsName, pgFldName)
+Private Sub PivotTable2Workbook(xlsName, xlsPath, folderPath, wsName, pgFldName)
     
     Dim xlsWbkNew
     Dim xlsWstNew
@@ -60,7 +62,7 @@ Private Sub PivotTable2Workbook(xlsPath, folderPath, wsName, pgFldName)
                 xlsApp.Sheets(1).Select
                 ' Head of current worksheet
                 xlsWstNew.Cells(1, 1).Value = "Mes"
-                xlsWstNew.Cells(1, 2).Value = "Produto"
+                xlsWstNew.Cells(1, 2).Value = pgFldName
                 xlsWstNew.Cells(1, 3).Value = "Valor"
                 xlsWstNew.Range("A1:C1").Font.Bold = True
                 ' Set visible data from current year or past year
@@ -92,7 +94,7 @@ Private Sub PivotTable2Workbook(xlsPath, folderPath, wsName, pgFldName)
                     Next
                 Next
                 ' Default name for result workbook, e.g., 2016_ASFALTO.xlsx
-                xlsFilename = targetYear & "_" & PvtTbl.Name & ".xlsx"
+                xlsFilename = xlsName & "_" & PvtTbl.Name & "_" & targetYear & ".xlsx"
                 ' Delete previous result workbook if exists
                 If FileExists(folderPath & xlsFilename) Then
                     FileDelete(folderPath & xlsFilename)
