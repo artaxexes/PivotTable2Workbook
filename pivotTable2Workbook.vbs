@@ -8,8 +8,8 @@ Option Explicit
 
 
 
-Const resultFolder = ""
-Const sourceFolder = "C:\Users\anddrei.ferreira\Documents\jobs\07_anp\"
+Const resultFolder = "C:\Users\anddrei.ferreira\Documents\jobs\07_anp\Test\out\"
+Const sourceFolder = "C:\Users\anddrei.ferreira\Documents\jobs\07_anp\Test\in\"
 
 Dim xlsFiles: xlsFiles = FilesInFolder(sourceFolder)
 
@@ -21,109 +21,134 @@ End If
 
 
 
-Private Sub PivotTable2Workbook(sourceFolder, resultFolder, theFiles)
+Private Sub PivotTable2Workbook(sourceFolder, resultFolder, fileNames)
 
-    MsgBox Join(theFiles, vbCrLf)
+	Dim aHora : aHora = Now()
+	Dim thisYear : thisYear = CStr(Year(aHora))
+	Dim targetYear : targetYear = thisYear
+    Dim foundYear : foundYear = False
+	Dim thisMonth : thisMonth = Month(aHora)
+    Const sheetName = "Plan1"
+    Dim fileName
     
-'    Dim file
+    For Each fileName In fileNames
     
-'    For Each file In files
+    	Dim pgFldName, tableNames()
+    	Dim file : file = Mid(fileName, 1, InStrRev(fileName, ".") - 1)
+    	If file = "9083" Then
+    		pgFldName = "PRODUTO"
+    		ReDim tableNames(1)
+    		tableNames(0) = "Tabela dinâmica5"
+    		tableNames(1) = "Tabela dinâmica7"
+    	Else
+    		ReDim tableNames(0)
+    		If file = "1043" Then
+    			pgFldName = "UN. DA FEDERAÇÃO"
+    			tableNames(0) = "Tabela dinâmica1"
+    		ElseIf file = "8476" Then
+    			pgFldName = "ORIGEM"
+    			tableNames(0) = "Tabela dinâmica5"
+    		ElseIf file = "8740" Then
+    			pgFldName = "PRODUTOR"
+    			tableNames(0) = "Tabela dinâmica4"
+    		ElseIf file = "11031" Then
+    			pgFldName = "PRODUTO"
+    			tableNames(0) = "Tabela dinâmica1"
+    		End If
+    	End If
     	
-'    	MsgBox file
+    	On Error Resume Next
+    	MsgBox "opening: " & sourceFolder & fileName
+    	Dim xlsWbk : Set xlsWbk = xlsApp.Workbooks.Open(sourceFolder & fileName, 0, True)
+    	If Err.Number <> 0 Then ShowErr
+    	
+    	MsgBox fileName & " (" & pgFldName & ")" & vbCrLf & "tables:" & vbCrLf & Join(tableNames, vbCrLf)
+    	
+    	Dim tableName
+    	For Each tableName In tableNames
+    	
+    		MsgBox tableName
+    		Dim xlsApp : Set xlsApp = CreateObject("Excel.Application")
+    		Set xlsApp.DisplayAlerts = False
+			
+			' Create result workbook and select first worksheet
+            Dim xlsWbkNew : Set xlsWbkNew = xlsApp.Workbooks.Add
+            Dim xlsWstNew : Set xlsWstNew = xlsWbkNew.Worksheets(1)
+            xlsApp.Sheets(1).Select
+            
+        	Dim pvtTbl : pvtTbl = xlsWbk.Worksheets(sheetName).PivotTables(tableName)
+        	MsgBox "IsNull: " & CStr(IsNull(pvtTbl))
+        	Dim pgFld
+        	
+    		' Check for target subtitle
+        	For Each pgFld In pvtTbl.PageFields
+        		If pgFld.Name = pgFldName Then
+					' Head of worksheet
+                	xlsWstNew.Cells(1, 1).Value = "Mes"
+                	xlsWstNew.Cells(1, 2).Value = pgFldName
+                	xlsWstNew.Cells(1, 3).Value = "Valor"
+                	xlsWstNew.Range("A1:C1").Font.Bold = True
+                	' Set visible data from current year or past year
+                	While foundYear = False
+                		Dim pvtItm
+                    	For Each pvtItm In pvtTbl.PivotFields("ANO").PivotItems
+                        	If pvtItm.Name = targetYear Then
+                            	pvtItm.Visible = True
+                            	foundYear = True
+                        	Else
+                            	pvtItm.Visible = False
+                        	End If
+                    	Next
+                    	If foundYear = False Then targetYear = thisYear - 1
+                	Wend
+                	' For every month
+                	Dim i : i = 2
+                	Dim j
+                	For j = 1 To thisMonth
+                    	' Filter by pattern in Pivot Item
+                    	Dim pgPvtItm
+                    	For Each pgPvtItm In pgFld.PivotItems
+                        	pgFld.ClearAllFilters
+                        	pgFld.CurrentPage = pgPvtItm.Name
+                        	' Get pivot data from first month until current month for current year
+                        	strMonth = MonthName(j)
+                        	strMonthProp = UCase(Left(strMonth, 1)) & LCase(Right(strMonth, Len(strMonth) - 1))
+                        	xlsWstNew.Cells(i, 1).Value = CheckMonth(j)
+                        	xlsWstNew.Cells(i, 2).Value = pgPvtItm.Name
+                        	xlsWstNew.Cells(i, 3).Value = pvtTbl.GetPivotData(CheckMonth(j), "Ano", targetYear).Value
+                        	i = i + 1
+                    	Next
+                	Next
+            	End If
+            Next
+            
+            ' Default name for result workbook, e.g., 2016_ASFALTO.xlsx
+            Dim xlsFilename : xlsFilename = targetYear & "_" & file & "_" & tableName & ".xlsx"
+            ' Delete previous result workbook if exists
+            If FileExists(resultFolder & xlsFilename) Then
+            	FileDelete(resultFolder & xlsFilename)
+            End If
+            ' Save the result workbook
+        	xlsWbkNew.SaveAs(folderPath & xlsFilename)
+        	xlsWbkNew.Close
+        	Set xlsWbkNew = Nothing
+        	Set xlsWstNew = Nothing
+        	' Finish the job
+    		xlsWbk.Saved = True
+    		xlsWbk.Close
+    		xlsApp.Quit
+    		Set xlsWbk = Nothing
+    		Set xlsApp = Nothing
+        Next
+    Next
     
-'    	Dim xlsWbkNew
-'    	Dim xlsWstNew
-'    	Dim xlsFilename
-'    	Dim PvtTbl
-'    	Dim PgFld
-'    	Dim PvtItm
-'    	Dim PgPvtItm
-'    	Dim i
-'    	Dim j
-    
-'    	Dim thisYear : thisYear = CStr(Year(Now()))
-'    	Dim thisMonth : thisMonth = Month(Now())
-
-'    	Dim foundYear : foundYear = False
-'    	Dim targetYear : targetYear = thisYear
-
-'    	Dim xlsApp : Set xlsApp = CreateObject("Excel.Application")
-'    	xlsApp.DisplayAlerts = False
-
-'    	On Error Resume Next
-'    	Dim xlsWbk : Set xlsWbk = xlsApp.Workbooks.Open(sourceFolder & file, 0, True) 'xlSrcWbk
-'    	If Err.Number <> 0 Then ShowErr
-
-    	' For each pivot table: check and filter by pattern, set visible for current year, create a workbook with filtered data
-'        For Each PvtTbl In xlsWbk.Worksheets(wsName).PivotTables
-        ' Check for pattern in Page Item
-'        For Each PgFld In PvtTbl.PageFields
-'                If PgFld.Name = pgFldName Then
-                ' Create result workbook and select first worksheet
-'                Set xlsWbkNew = xlsApp.Workbooks.Add
-'                Set xlsWstNew = xlsWbkNew.Worksheets(1)
-'                xlsApp.Sheets(1).Select
-                ' Head of current worksheet
-'                xlsWstNew.Cells(1, 1).Value = "Mes"
-'                xlsWstNew.Cells(1, 2).Value = pgFldName
-'                xlsWstNew.Cells(1, 3).Value = "Valor"
-'                xlsWstNew.Range("A1:C1").Font.Bold = True
-                ' Set visible data from current year or past year
-'                While foundYear = False
-'                    For Each PvtItm In PvtTbl.PivotFields("ANO").PivotItems
-'                        If PvtItm.Name = targetYear Then
-'                            PvtItm.Visible = True
-'                            foundYear = True
-'                        Else
-'                            PvtItm.Visible = False
-'                        End If
-'                    Next
-'                    If foundYear = False Then targetYear = thisYear - 1
-'                WEnd
-                ' For every month
-'                i = 2
-'                For j = 1 To thisMonth
-                    ' Filter by pattern in Pivot Item
-'                    For Each PgPvtItm In PgFld.PivotItems
-'                        PgFld.ClearAllFilters
-'                        PgFld.CurrentPage = PgPvtItm.Name
-                        ' Get pivot data from first month until current month for current year
-                        'strMonth = MonthName(j)
-                        'strMonthProp = UCase(Left(strMonth, 1)) & LCase(Right(strMonth, Len(strMonth) - 1))
-'                        xlsWstNew.Cells(i, 1).Value = CheckMonth(j)
-'                        xlsWstNew.Cells(i, 2).Value = PgPvtItm.Name
-'                        xlsWstNew.Cells(i, 3).Value = PvtTbl.GetPivotData(CheckMonth(j), "Ano", targetYear).Value
-'                        i = i + 1
-'                    Next
-'                Next
-                ' Default name for result workbook, e.g., 2016_ASFALTO.xlsx
-'                xlsFilename = xlsName & "_" & PvtTbl.Name & "_" & targetYear & ".xlsx"
-                ' Delete previous result workbook if exists
-'                If FileExists(folderPath & xlsFilename) Then
-'                    FileDelete(folderPath & xlsFilename)
-'                End If
-'            End If
-'        Next
-        ' Save the result workbook
-'        xlsWbkNew.SaveAs(folderPath & xlsFilename)
-'        xlsWbkNew.Close
-'        Set xlsWbkNew = Nothing
-'        Set xlsWstNew = Nothing
-'    Next
-
-    ' Finish the job
-'    xlsWbk.Saved = True
-'    xlsWbk.Close
-'    xlsApp.Quit
-'    Set xlsWbk = Nothing
-'    Set xlsApp = Nothing
-
 End Sub
 
 
 
 ' Return xls/xlsx files in existing folder
 Private Function FilesInFolder(path)
+
 	Dim arrFiles : arrFiles = Array()
 	If FolderExists(path) Then
 		Dim objFSO, objFolder, objFiles, objFile
@@ -139,6 +164,7 @@ Private Function FilesInFolder(path)
 		Next
 	End If
 	FilesInFolder = arrFiles
+	
 End Function
 
 
