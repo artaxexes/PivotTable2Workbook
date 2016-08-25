@@ -8,15 +8,16 @@ Option Explicit
 
 
 
-Const resultFolder = "C:\Users\anddrei.ferreira\Documents\jobs\07_anp\Test\out\"
 Const sourceFolder = "C:\Users\anddrei.ferreira\Documents\jobs\07_anp\Test\in\"
+Const resultFolder = "C:\Users\anddrei.ferreira\Documents\jobs\07_anp\Test\out\"
 
-Dim xlsFiles: xlsFiles = FilesInFolder(sourceFolder)
+
+Dim xlsFiles: xlsFiles = ListFilesInFolder(sourceFolder)
 
 If UBound(xlsFiles) > 0 Then
 	PivotTable2Workbook sourceFolder, resultFolder, xlsFiles
 Else
-	MsgBox "This folder does not exist or there is no xls/xlsx file in this folder!"
+	MsgBox "There is no xls/xlsx file in this folder"
 End If
 
 
@@ -26,20 +27,28 @@ Private Sub PivotTable2Workbook(sourceFolder, resultFolder, fileNames)
 	Dim aHora : aHora = Now()
 	Dim thisYear : thisYear = CStr(Year(aHora))
 	Dim targetYear : targetYear = thisYear
-    Dim foundYear : foundYear = False
 	Dim thisMonth : thisMonth = Month(aHora)
     Const sheetName = "Plan1"
-    Dim fileName
+    Dim fileName, tableNames()
     
     For Each fileName In fileNames
-    
-    	Dim pgFldName, tableNames()
-    	Dim file : file = Mid(fileName, 1, InStrRev(fileName, ".") - 1)
+
+        Dim pgFldName
+        Dim file : file = Mid(fileName, 1, InStrRev(fileName, ".") - 1)
+
     	If file = "9083" Then
     		pgFldName = "PRODUTO"
     		ReDim tableNames(1)
     		tableNames(0) = "Tabela dinâmica5"
     		tableNames(1) = "Tabela dinâmica7"
+        ElseIf file = "8485" Then
+            pgFldName = "PRODUTO"
+            ReDim tableNames(4)
+            tableNames(0) = "Tabela dinâmica1"
+            tableNames(1) = "Tabela dinâmica2"
+            tableNames(2) = "Tabela dinâmica3"
+            tableNames(3) = "Tabela dinâmica7"
+            tableNames(4) = "Tabela dinâmica12"
     	Else
     		ReDim tableNames(0)
     		If file = "1043" Then
@@ -57,28 +66,24 @@ Private Sub PivotTable2Workbook(sourceFolder, resultFolder, fileNames)
     		End If
     	End If
     	
+        Dim xlsApp : Set xlsApp = CreateObject("Excel.Application")
+		xlsApp.DisplayAlerts = False
+
     	On Error Resume Next
-    	MsgBox "opening: " & sourceFolder & fileName
     	Dim xlsWbk : Set xlsWbk = xlsApp.Workbooks.Open(sourceFolder & fileName, 0, True)
     	If Err.Number <> 0 Then ShowErr
     	
-    	MsgBox fileName & " (" & pgFldName & ")" & vbCrLf & "tables:" & vbCrLf & Join(tableNames, vbCrLf)
-    	
     	Dim tableName
     	For Each tableName In tableNames
-    	
-    		MsgBox tableName
-    		Dim xlsApp : Set xlsApp = CreateObject("Excel.Application")
-    		Set xlsApp.DisplayAlerts = False
 			
 			' Create result workbook and select first worksheet
             Dim xlsWbkNew : Set xlsWbkNew = xlsApp.Workbooks.Add
             Dim xlsWstNew : Set xlsWstNew = xlsWbkNew.Worksheets(1)
             xlsApp.Sheets(1).Select
             
-        	Dim pvtTbl : pvtTbl = xlsWbk.Worksheets(sheetName).PivotTables(tableName)
-        	MsgBox "IsNull: " & CStr(IsNull(pvtTbl))
+            Dim pvtTbl : Set pvtTbl = xlsWbk.Worksheets(sheetName).PivotTables(tableName)
         	Dim pgFld
+            Dim foundYear : foundYear = False
         	
     		' Check for target subtitle
         	For Each pgFld In pvtTbl.PageFields
@@ -89,9 +94,9 @@ Private Sub PivotTable2Workbook(sourceFolder, resultFolder, fileNames)
                 	xlsWstNew.Cells(1, 3).Value = "Valor"
                 	xlsWstNew.Range("A1:C1").Font.Bold = True
                 	' Set visible data from current year or past year
+                    Dim pvtItm
                 	While foundYear = False
-                		Dim pvtItm
-                    	For Each pvtItm In pvtTbl.PivotFields("ANO").PivotItems
+                        For Each pvtItm In pvtTbl.PivotFields("ANO").PivotItems
                         	If pvtItm.Name = targetYear Then
                             	pvtItm.Visible = True
                             	foundYear = True
@@ -103,13 +108,12 @@ Private Sub PivotTable2Workbook(sourceFolder, resultFolder, fileNames)
                 	Wend
                 	' For every month
                 	Dim i : i = 2
-                	Dim j
+                    Dim j, pgPvtItm
                 	For j = 1 To thisMonth
                     	' Filter by pattern in Pivot Item
-                    	Dim pgPvtItm
                     	For Each pgPvtItm In pgFld.PivotItems
                         	pgFld.ClearAllFilters
-                        	pgFld.CurrentPage = pgPvtItm.Name
+                            pgFld.CurrentPage = pgPvtItm.Name
                         	' Get pivot data from first month until current month for current year
                         	strMonth = MonthName(j)
                         	strMonthProp = UCase(Left(strMonth, 1)) & LCase(Right(strMonth, Len(strMonth) - 1))
@@ -125,21 +129,25 @@ Private Sub PivotTable2Workbook(sourceFolder, resultFolder, fileNames)
             ' Default name for result workbook, e.g., 2016_ASFALTO.xlsx
             Dim xlsFilename : xlsFilename = targetYear & "_" & file & "_" & tableName & ".xlsx"
             ' Delete previous result workbook if exists
-            If FileExists(resultFolder & xlsFilename) Then
-            	FileDelete(resultFolder & xlsFilename)
+            Dim resultPath : resultPath = resultFolder & xlsFilename
+            If FileExists(resultPath) Then
+                FileDelete(resultPath)
             End If
             ' Save the result workbook
-        	xlsWbkNew.SaveAs(folderPath & xlsFilename)
+            xlsWbkNew.SaveAs(resultPath)
         	xlsWbkNew.Close
         	Set xlsWbkNew = Nothing
         	Set xlsWstNew = Nothing
-        	' Finish the job
-    		xlsWbk.Saved = True
-    		xlsWbk.Close
-    		xlsApp.Quit
-    		Set xlsWbk = Nothing
-    		Set xlsApp = Nothing
+
         Next
+
+        ' Finish the job
+        xlsWbk.Saved = True
+        xlsWbk.Close
+        xlsApp.Quit
+        Set xlsWbk = Nothing
+        Set xlsApp = Nothing
+
     Next
     
 End Sub
@@ -147,7 +155,7 @@ End Sub
 
 
 ' Return xls/xlsx files in existing folder
-Private Function FilesInFolder(path)
+Private Function ListFilesInFolder(path)
 
 	Dim arrFiles : arrFiles = Array()
 	If FolderExists(path) Then
@@ -162,8 +170,10 @@ Private Function FilesInFolder(path)
 				arrFiles(index + 1) = objFile.Name
 			End If
 		Next
+	Else
+		MsgBox "This folder does not exist"
 	End If
-	FilesInFolder = arrFiles
+	ListFilesInFolder = arrFiles
 	
 End Function
 
