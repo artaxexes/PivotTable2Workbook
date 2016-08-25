@@ -8,8 +8,8 @@ Option Explicit
 
 
 
-Const sourceFolder = "C:\Users\anddrei.ferreira\Documents\jobs\07_anp\Test\in\"
-Const resultFolder = "C:\Users\anddrei.ferreira\Documents\jobs\07_anp\Test\out\"
+Const sourceFolder = "C:\in\"
+Const resultFolder = "C:\out\"
 
 
 Dim xlsFiles: xlsFiles = ListFilesInFolder(sourceFolder)
