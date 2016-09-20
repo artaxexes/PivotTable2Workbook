@@ -8,8 +8,8 @@ Option Explicit
 
 
 
-Const sourceFolder = "C:\in\"
-Const resultFolder = "C:\out\"
+Const sourceFolder = "C:\test\in\"
+Const resultFolder = "C:\test\out\"
 
 
 Dim xlsFiles: xlsFiles = ListFilesInFolder(sourceFolder)
@@ -38,9 +38,11 @@ Private Sub PivotTable2Workbook(sourceFolder, resultFolder, fileNames)
 
     	If file = "9083" Then
     		pgFldName = "PRODUTO"
-    		ReDim tableNames(1)
-    		tableNames(0) = "Tabela dinâmica5"
-    		tableNames(1) = "Tabela dinâmica7"
+    		ReDim tableNames(3)
+    		tableNames(0) = "Tabela dinâmica1"
+    		tableNames(1) = "Tabela dinâmica3"
+    		tableNames(2) = "Tabela dinâmica5"
+    		tableNames(3) = "Tabela dinâmica7"
         ElseIf file = "8485" Then
             pgFldName = "PRODUTO"
             ReDim tableNames(4)
@@ -49,12 +51,14 @@ Private Sub PivotTable2Workbook(sourceFolder, resultFolder, fileNames)
             tableNames(2) = "Tabela dinâmica3"
             tableNames(3) = "Tabela dinâmica7"
             tableNames(4) = "Tabela dinâmica12"
+        ElseIf file = "1043" Then
+            ReDim tableNames(1)
+            pgFldName = "UN. DA FEDERAÇÃO"
+    		tableNames(0) = "Tabela dinâmica1"
+    		tableNames(1) = "Tabela dinâmica2"
     	Else
     		ReDim tableNames(0)
-    		If file = "1043" Then
-    			pgFldName = "UN. DA FEDERAÇÃO"
-    			tableNames(0) = "Tabela dinâmica1"
-    		ElseIf file = "8476" Then
+    		If file = "8476" Then
     			pgFldName = "ORIGEM"
     			tableNames(0) = "Tabela dinâmica5"
     		ElseIf file = "8740" Then
@@ -87,6 +91,9 @@ Private Sub PivotTable2Workbook(sourceFolder, resultFolder, fileNames)
         	
     		' Check for target subtitle
         	For Each pgFld In pvtTbl.PageFields
+        	    If file = "8485" And tableName = "Tabela dinâmica2" Then
+        	        pgFldName = "ESTADO"
+        	    End If
         		If pgFld.Name = pgFldName Then
 					' Head of worksheet
                 	xlsWstNew.Cells(1, 1).Value = "Mes"
